@@ -26,8 +26,6 @@ import (
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
-	"k8s.io/klog"
-
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/util/sets"
 	clientset "k8s.io/client-go/kubernetes"
@@ -40,22 +38,22 @@ import (
 	_ "k8s.io/component-base/metrics/prometheus/version"    // for version metric registration
 	"k8s.io/component-base/version"
 	"k8s.io/component-base/version/verflag"
-	"k8s.io/kubernetes/pkg/apis/core"
+	"k8s.io/klog/v2"
 	"k8s.io/kubernetes/pkg/api/legacyscheme"
-
-	"k8s.io/kubernetes/pkg/kubelet/cm"
+	"k8s.io/kubernetes/pkg/apis/core"
 	"k8s.io/kubernetes/pkg/master/ports"
+	utiltaints "k8s.io/kubernetes/pkg/util/taints"
 
 	simulatorconfig "volcano.sh/kubesim/pkg/config"
 	"volcano.sh/kubesim/pkg/kubesim"
 	"volcano.sh/kubesim/pkg/metrics"
 	metricconfig "volcano.sh/kubesim/pkg/metrics/config"
 	cadvisortest "volcano.sh/kubesim/pkg/mock/kubelet/cadvisor/testing"
+	"volcano.sh/kubesim/pkg/mock/kubelet/cm"
 	"volcano.sh/kubesim/pkg/mock/kubelet/remote"
 	fakeremote "volcano.sh/kubesim/pkg/mock/kubelet/remote/fake"
 	fakeexec "volcano.sh/kubesim/pkg/mock/util/exec/testing"
 	fakeiptables "volcano.sh/kubesim/pkg/mock/util/iptables/testing"
-	utiltaints "k8s.io/kubernetes/pkg/util/taints"
 	fakesysctl "volcano.sh/kubesim/pkg/mock/util/sysctl/testing"
 )
 
@@ -221,7 +219,7 @@ func run(config *hollowNodeConfig) {
 		// load fake node resource capacity from yaml file
 		nc, _ := simulatorconfig.NodeConfigFromYaml(config.NodeResourceFile, config.NodeResourceName)
 		cadvisorInterface := cadvisortest.New(config.NodeName, nc)
-		containerManager := cm.NewStubContainerManager()
+		containerManager := cm.NewFakeContainerManager(nc)
 
 		// update node labels
 		for k, v := range nc.Labels {
